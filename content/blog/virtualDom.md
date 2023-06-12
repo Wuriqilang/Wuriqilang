@@ -1,0 +1,761 @@
+---
+external: false
+title: "它为什么这么快？—— Vue Virtual DOM详解"
+description: 面试京东和阿里的时候，面试官都问到了虚拟 Dom 与页面渲染的相关问题，鄙人支支吾吾，颠三倒四的回答了一个大概，引以为耻。
+date: 2020-07-01 15:15:18
+tags: [vue, 值得一读]
+categories: [前端拾遗]
+image: https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/posts/virtualDom.jpg
+---
+
+面试京东和阿里的时候，面试官都问到了虚拟 Dom 与页面渲染的相关问题，鄙人支支吾吾，颠三倒四的回答了一个大概，引以为耻。
+确实，对于一名前端工程师来说，想要针对性的对项目做优化就一定绕不开页面渲染机制。本文将从 Vue Virtual DOM 实现的角度出发，讨论前端最重要的知识点：页面渲染。
+
+写在最前面：本文中提出的一些关于浏览器内核观点可以参考另外一片文章 [浏览器内核的三国风云](post/liulanqisanguo/)
+值得说明的是，本文撰写过程中我愈发发现每一个涉及的知识点都可以单独写一篇文章，也愈发发现自己的无知，但作为一名以解决问题为目标的工程师，很多细碎的知识点我们的原则是尽量“不求甚解”。
+
+## 一、一个页面是如何渲染出来的？
+
+我们知道浏览器主要由七个模块组成的，七个模块相互配合，实现网络资源的请求、解析、重拍、渲染、交互。
+
+![](https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/posts/1593653719143.png)
+
+- User Interface（用户界面）：包括地址栏、后退/前进按钮、收藏栏等，即用户看到的除了页面之外的浏览器界面。
+- Browser engine（浏览器引擎）：
+  - 在用户界面与渲染引擎之间传送指令。保证浏览器各个部分之间互相通信
+  - 访问客户端本地缓存（或长期保存）的数据，对这些数据进行读写。
+- DataPersistence（数据存储）：浏览器中保存的 cookie、localStorage 等数据。
+- Rendering engine（浏览器内核）：实际上这个单词的准确翻译是：**渲染引擎**。之所以翻译为浏览器内核，是因为本文的观点认为浏览器内核包含了渲染引擎与 JS 引擎。浏览器内核主要功能是解析 DOM 文档和 CSS 规则，并将内容排版到浏览器中。
+- Networking（网络）：用来完成网络调用或者资源下载的模块
+- JavaScript Interpreter（JS 解释器）：即 JS 引擎，用来解释执行 JS 脚本，如 V8（Chromium Blink），JavaScriptCore（webkit）
+- UI Backend（UI 模块）：用来绘制基本浏览器控件，如输入框、按钮、选择按钮等，根据不同浏览器绘制效果也有差异，但功能相同。
+
+### 1.1 渲染引擎工作流程
+
+> 因为目前采用 webkit 内核（chrome blink 与 webkit 的渲染过程类似）的浏览器占据了 90%以上的市场份额，所以本文仅讨论该内核。（其他的知识我不要知道不要知道。。。）
+
+1. **解析 HTML 生成 DOM 树**：渲染引擎将 HTML 标签解析成由多个 DOM 元素对象节点组成的具有父子关系的 DOM 树结构。
+2. **解析 CSS 生成 CSSOM 规则树**
+3. **生成渲染树**： 将 DOM 树与 CSSOM 规则树合并，根据 DOM 树结构的每一个节点顺序提前计算使用的 CSS 规则并重新计算 DOM 树结构的样式数据，生成一个带有样式描述的 DOM 渲染树对象。
+4. **渲染树布局**：遍历渲染树，根据渲染树节点在页面中的大小和位置，将渲染树节点固定到页面的位置上,这个阶段只有元素的布局属性(position,float,margin)生效.
+5. **绘制渲染树**：将渲染树节点的背景、颜色、文本等样式信息应用的节点上，这个阶段主要是元素的内部显示样式（color，background 等属性）生效。
+
+> 渲染引擎对与 DOM 渲染树的解析和输出是**逐行进行**的.这样渲染树前面的内容可以先展示，这样保证了较好的用户体验。
+
+![](https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/posts/1593655664644.jpg)
+
+在这里我们需要注意的是在渲染树**布局**和**绘制**阶段：
+
+- 页面重排（reflow）：页面在生成后如果页面元素位置或尺寸发生改变，**一旦页面 reflow 则必定会 repaint**
+- 页面重绘（repaint）：屏幕的一部分重画，不影响整体布局，比如 css 的背景色变化，但是元素的尺寸和位置不变。显示样式发生改变但是布局即元素位置不发生改变
+
+reflow 产生的代价要远大于 repaint，所以我们要尽量避免 reflow，减少 repaint
+
+### 1.2 渲染阻塞
+
+- **JS 执行阻塞**：当浏览器遇到一个 script 标记时，DOM 构建将暂停，直至脚本完成执行，然后继续构建 DOM。每次去执行 JavaScript 脚本都会严重地阻塞 DOM 树的构建，如果 JavaScript 脚本还操作了 CSSOM，而正好这个 CSSOM 还没有下载和构建，浏览器甚至会延迟脚本执行和构建 DOM，直至完成其 CSSOM 的下载和构建。所以，script 标签的位置很重要。实际使用时，可以遵循下面两个原则：
+
+  - CSS 优先：引入顺序上，CSS 资源先于 JavaScript 资源。
+  - JS 置后：我们通常把 JS 代码放到页面底部，且 JavaScript 应尽量少影响 DOM 的构建。
+
+- **CSS 解析阻塞**：当解析 html 的时候，会把新来的元素插入 dom 树里面，同时去查找 css，然后把对应的样式规则应用到元素上，查找样式表是按照从右到左的顺序去匹配的。例如： div p {font-size: 16px}，会先寻找所有 p 标签并判断它的父标签是否为 div 之后才会决定要不要采用这个样式进行渲染）。所以，我们平时写 CSS 时，尽量用 id 和 class，千万不要过渡层叠。
+
+## 二、一切都很美好，为什么要用 Virtual-DOM ？
+
+### 2.1 操作 DOM 元素的代价
+
+首先我们应该有一个概念，在前端项目中，一个 DOM 是很“昂贵”的。你可以在浏览器命令行中执行以下代码，打印一个最简单 div 元素中所有属性
+
+```js
+var div = document.createElement("div");
+var str = "";
+for (var key in div) {
+  str += key + "  ";
+}
+```
+
+![](https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/posts/1593659368665.PNG)
+
+这仅仅是一个最简单的 dom 元素. 当我们通过 JavaScript 操作页面中 dom 节点时,浏览器会从构建 DOM 树开**始从头到尾执行一遍**渲染流程. (有些情况下也会集中处理,这里不做讨论).
+假如我们要更新 10 个 DOM 节点, 浏览器接收到第一个更新请求时会马上执行, 连续执行 10 次,而事实上最后一次执行的结果才是我们需要的. 前九次运算都是在浪费性能. 最终导致页面卡顿,内存占用过高,用户体验差.
+
+![](https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/posts/1593659945748.jpg)
+
+### 2.2 虚拟 DOM 的好处
+
+虚拟 DOM 就是为了解决浏览器性能问题而被设计出来的.
+
+假如一次操作中有 10 个更新 DOM 的动作,虚拟 DOM 不会立即执行,而是将这 10 次更新的 diff 内容保存到本地的 JS 对象中,最终将这个 JS 对象一次性 attch 到 DOM 树上,再进行后续操作,避免大量无效计算. 这样页面的更新可以全部反应在 JS 对象(虚拟 DOM 上),操作内存中的 JS 对象速度当然要更快,等更新完后再将 JS 对象映射成真实的 DOM,交给浏览器去绘制.
+
+> 除了性能优化外,虚拟 DOM 实现让服务端渲染,跨端渲染成为了可能.
+
+## 三、Virtual DM 的实现
+
+### 3.1 Vue 的 Virtual DOM
+
+Virtual DOM 就是用一个原生的 JS 对象去描述 DOM 节点,所以它比创建一个 DOM 的代价要小很多. 在 Vue 中,Virtual DOM 是用 VNode(一个 Class)去描述的,它定义在 src/core/vdom/vnod.js 中.
+
+```js
+export default class VNode {
+  tag: string | void;
+  data: VNodeData | void;
+  children: ?Array<VNode>;
+  text: string | void;
+  elm: Node | void;
+  ns: string | void;
+  context: Component | void; // rendered in this component's scope
+  key: string | number | void;
+  componentOptions: VNodeComponentOptions | void;
+  componentInstance: Component | void; // component instance
+  parent: VNode | void; // component placeholder node
+
+  // strictly internal
+  raw: boolean; // contains raw HTML? (server only)
+  isStatic: boolean; // hoisted static node
+  isRootInsert: boolean; // necessary for enter transition check
+  isComment: boolean; // empty comment placeholder?
+  isCloned: boolean; // is a cloned node?
+  isOnce: boolean; // is a v-once node?
+  asyncFactory: Function | void; // async component factory function
+  asyncMeta: Object | void;
+  isAsyncPlaceholder: boolean;
+  ssrContext: Object | void;
+  fnContext: Component | void; // real context vm for functional nodes
+  fnOptions: ?ComponentOptions; // for SSR caching
+  fnScopeId: ?string; // functional scope id support
+
+  constructor(tag?: string, data?: VNodeData, children?: ?Array<VNode>, text?: string, elm?: Node, context?: Component, componentOptions?: VNodeComponentOptions, asyncFactory?: Function) {
+    this.tag = tag;
+    this.data = data;
+    this.children = children;
+    this.text = text;
+    this.elm = elm;
+    this.ns = undefined;
+    this.context = context;
+    this.fnContext = undefined;
+    this.fnOptions = undefined;
+    this.fnScopeId = undefined;
+    this.key = data && data.key;
+    this.componentOptions = componentOptions;
+    this.componentInstance = undefined;
+    this.parent = undefined;
+    this.raw = false;
+    this.isStatic = false;
+    this.isRootInsert = true;
+    this.isComment = false;
+    this.isCloned = false;
+    this.isOnce = false;
+    this.asyncFactory = asyncFactory;
+    this.asyncMeta = undefined;
+    this.isAsyncPlaceholder = false;
+  }
+
+  // DEPRECATED: alias for componentInstance for backwards compat.
+  /* istanbul ignore next */
+  get child(): Component | void {
+    return this.componentInstance;
+  }
+}
+```
+
+当然了,即使我在努力的告诉你它开销很小,但实际 VNode 还是有些复杂的,这是因为 Vue 在借鉴一个开源库[snabbdom](https://github.com/snabbdom/snabbdom) 的基础上针对 Vue 的特性做了一些实现.
+
+其实 VNode 是对真实 DOM 的一种抽象描述，它的核心定义无非就几个关键属性，标签名、数据、子节点、键值等，其它属性都是用来扩展 VNode 的灵活性以及实现一些特殊 feature 的。由于 VNode 只是用来映射到真实 DOM 的渲染，不需要包含操作 DOM 的方法，因此它是非常轻量和简单的。
+Virtual DOM 除了它的数据结构的定义，映射到真实的 DOM 实际上要经历 VNode 的 create、diff、patch 等过程。
+
+接下来,我们会用一个相对比较长的篇幅来描述 Virtual DOM 的算法实现,话不多说,开车!
+
+![](https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/posts/1593668470261.jpeg)
+
+### 3.2 Virtual DOM 的实现
+
+![](https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/posts/1593668619504.png)
+
+通过上图我们可以直观的看到从 Vue 初始化到最终渲染的过程，本节的思路主要来源于 [深入剖析：Vue 核心之虚拟 DOM 掘金-你是我的超级英雄](https://juejin.im/post/5d36cc575188257aea108a74) 这篇文章从 Virtual DOM 的实现到 Vue VNode 源码都做了详细的分析。
+
+#### 3.2.1 用 JS 对象模拟 DOM 树
+
+假设我们需要表示这样一个真实的 DOM 节点：
+
+```html
+<div id="virtual-dom">
+  <p>Virtual DOM</p>
+  <ul id="list">
+    <li class="item">Item 1</li>
+    <li class="item">Item 2</li>
+    <li class="item">Item 3</li>
+  </ul>
+  <div>Hello World</div>
+</div>
+```
+
+我们希望通过 JavaScript 中的对象来表示这样的 DOM 节点,并使用对象的属性来记录节点的类型,属性,子节点等信息. 首先我们编写一个 element 模块
+
+> 本文为了方便你直接在浏览器中操作而无需开启一个 nodejs 环境,本例使用了浏览器原生支持的 ES-Module 引入方式(我相信这也是未来前端构建项目的最佳方式), 当然你也可以通过 webpack,browserify 等方法来编译 js 文件,使浏览器可以通过 require 或 import 调用模块.
+
+```js
+/**
+ * Element Virtual-dom 对象定义
+ * @param {String} tagName - dom元素名称
+ * @param {Object} props - dom属性
+ * @param {Array<ELEMENT|String>} -子节点
+ */
+function Element(tagName, props, children) {
+  this.tagName = tagName;
+  this.props = props;
+  this.children = children;
+  //dom元素的key值,用作唯一标识符
+  if (props.key) {
+    this.key = props.key;
+  }
+  var count = 0;
+  children.forEach((child, i) => {
+    if (child instanceof Element) {
+      count += child.count;
+    } else {
+      children[i] = "" + child;
+    }
+    count++;
+  });
+  //子元素的个数
+  this.count = count;
+}
+function createElement(tagName, props, children) {
+  return new Element(tagName, props, children);
+}
+export default createElement;
+```
+
+接下来,根据 element 对象的设定,我们可以将上述的 DOM 结构表示出来,并打印在控制台中.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Virtual DOM实现</title>
+  </head>
+  <body>
+    <div id="virtual-dom">
+      <p>Practical DOM</p>
+      <ul id="list">
+        <li class="item">Item 1</li>
+        <li class="item">Item 2</li>
+        <li class="item">Item 3</li>
+      </ul>
+      <div>Hello World</div>
+    </div>
+    <script type="module">
+      import el from "./Element.js";
+      var virtualDom = el("div", { id: "virtual-dom" }, [el("p", {}, ["Virtual DOM"]), el("ul", { id: "list" }, [el("li", { class: "item" }, ["Item 1"]), el("li", { class: "item" }, ["Item 2"]), el("li", { class: "item" }, ["Item 3"])]), el("div", {}, ["Hello World"])]);
+      console.log("Virtual Dom:");
+      console.log(virtualDom);
+      console.log("Practical Dom:");
+      console.log(document.getElementById("virtual-dom"));
+    </script>
+  </body>
+</html>
+```
+
+在本例中我还写了一个 真实 DOM,你可以从控制台中直观的比较两者的差异
+
+![](https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/posts/1593680905126.PNG)
+
+#### 3.2.2 将模拟 DOM 树渲染到页面中
+
+上面的例子我们将 DOM 改造为一个 自定义的 element 对象,那么如何将这个对象渲染成真实的 DOM 结构呢?
+让我们对 element 对象进行改造. 其实就是对 Element 对象的原型增加一个 render 函数. 改造后的 Element.js 如下
+
+```js
+/**
+ * Element Virtual-dom 对象定义
+ * @param {String} tagName - dom元素名称
+ * @param {Object} props - dom属性
+ * @param {Array<ELEMENT|String>} -子节点
+ */
+function Element(tagName, props, children) {
+  this.tagName = tagName;
+  this.props = props;
+  this.children = children;
+  //dom元素的key值,用作唯一标识符
+  if (props.key) {
+    this.key = props.key;
+  }
+  var count = 0;
+  children.forEach((child, i) => {
+    if (child instanceof Element) {
+      count += child.count;
+    } else {
+      children[i] = "" + child;
+    }
+    count++;
+  });
+  //子元素的个数
+  this.count = count;
+}
+/**
+ * render 将virdual-dom对象渲染为真实DOM元素
+ */
+Element.prototype.render = function () {
+  var el = document.createElement(this.tagName);
+  var props = this.props;
+  //设置节点DOM属性
+  for (var propName in props) {
+    var propValue = props[propName];
+    el.setAttribute(propName, propValue);
+  }
+
+  var children = this.children || [];
+  children.forEach((child) => {
+    var childEl =
+      child instanceof Element
+        ? child.render() //如果子节点也是虚拟DOM,递归构建DOM节点
+        : document.createTextNode(child); //如果是字符串,只构建文本节点
+    el.appendChild(childEl);
+  });
+  return el;
+};
+function createElement(tagName, props, children) {
+  return new Element(tagName, props, children);
+}
+export default createElement;
+```
+
+接下来,我们只需在 html 中调用一下这个函数生成一个真实 DOM 树,添加到页面中即可
+在 html 中加入下面两行代码
+
+```js
+//渲染虚拟DOM
+var ulRoot = virtualDom.render();
+document.body.appendChild(ulRoot);
+```
+
+bingo! 页面 body 中加入了一个 DOM 结构,效果如图所示:
+
+![](https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/posts/1593765774653.png)
+
+#### 3.2.3 计算两棵 Virtual DOM 树的算法实现 diff
+
+接下来,当我们修改 Virtual DOM 之后,需要比较修改前后的 DOM 树的差异,然后返回一个 patch 对象,即补丁对象,再通过特定的解析 patch 对象,完成页面的渲染.
+
+大概流程是这样的:
+
+![](https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/posts/1593768412866.PNG)
+
+到这里,聪明的你一定会问 : 为啥要对比呢? 我把新的 Virtual Dom 渲染出来不就行了吗? 向上一节一样 调用 document.CreateElement 不就 OK 了吗? 何必多次一举?
+
+这是因为 document.CreateElement 这个操作开销也很大,它本质就是新建一个 DOM 结构,对于性能是一个巨大的浪费. 为了减少性能损耗, 我们需要通过 diff + patch 的方式实现 DOM 结构的更新.
+
+接下来我们实现一个 diff 算法.
+
+- **diff 算法**：diff 就是用来比较两颗 Virtual Dom 差异的算法。如果是由你来实现这段功能，我们可能会遍历两棵 DOM 树中的每一个节点，将其进行对比，这样的化时间复杂度将会是$O(n^3)$ → (两颗树遍历是$O(n^2)$,再做一次更新操作,时间复杂度就是$O(n^3)$)
+  但是在我们前端实际操作 DOM 元素过程中,极少会遇到跨越层级调动 DOM 元素的情况,所以 Virtual DOM 只会对同一层级的与阿奴进行对比.这样时间复杂度就可以达到 O(n).
+
+![](https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/posts/1593996871511.PNG)
+
+**(1) 深度优先遍历,记录差异**
+首先我们可以对新旧两颗树进行一个**深度优先遍历**,这样每个节点都会有一个唯一标记.
+
+![](https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/posts/1593997028669.PNG)
+
+在深度优先遍历的同时,每遍历到一个节点就把这个节点和新的树进行对比,如果有差异的话就记录到一个对象中.
+我们新建一个 diff.js 文件来存放 diff 方法的代码:
+
+```js
+/**
+ * diff函数,对比两颗树
+ * @param {Element} oldTree - 之前的树
+ * @param {Element} newTree - 新的Virtual DOM树
+ */
+function diff(oldTree, newTree) {
+  var index = 0; //当前节点的标志
+  var patches = {}; // 用来记录每个节点差异的对象
+  dfsWalk(oldTree, newTree, index, patches);
+  return patches;
+}
+
+//对两棵树进行深度优先遍历
+function dfsWalk(oldNode, newNode, index, patches) {
+  var currentPatch = [];
+  if (typeof oldNode === "string" && typeof newNode === "string") {
+    //文本内容改变
+    if (newNode !== oldNode) {
+      currentPatch.push({ type: patch.TEXT, context: newNode });
+    }
+  } else if (newNode != null && oldNode.tagName === newNode.tagName && oldNode.key === newNode.key) {
+    //节点相同,比较属性
+    var propsPathes = diffProps(oldNode, newNode);
+    if (propsPathes) {
+      currentPatch.push({ type: patch.PROPS, props: propsPathes });
+    }
+    //比较子节点,如果子节点有'ignore'属性,则不需要比较
+    if (!isIgnoreChildren(newNode)) {
+      diffChildren(oldNode.children, newNode.children, index, patches, currentPatch);
+    }
+  } else if (newNode !== null) {
+    //新旧节点不相同,用replace替换
+    currentPatch.push({ type: patch.REPLACE, node: newNode });
+  }
+
+  if (currentPatch.length) {
+    patches[index] = currentPatch;
+  }
+}
+
+// 遍历子节点
+function diffChildren(oldChildren, newChildren, index, patches, currentPatch) {
+  var diffs = listDiff(oldChildren, newChildren, "key");
+  newChildren = diffs.children;
+
+  if (diffs.moves.length) {
+    var reorderPatch = { type: patch.REORDER, moves: diffs.moves };
+    currentPatch.push(reorderPatch);
+  }
+
+  var leftNode = null;
+  var currentNodeIndex = index;
+  oldChildren.forEach((child, i) => {
+    var newChild = newChildren[i];
+    currentNodeIndex = leftNode && leftNode.count ? currentNodeIndex + leftNode.count + 1 : currentNodeIndex + 1;
+    dfsWalk(child, newChild, currentNodeIndex, patches);
+    leftNode = child;
+  });
+}
+
+// 比较节点属性
+function diffProps(oldNode, newNode) {
+  var count = 0;
+  var oldProps = oldNode.props;
+  var newProps = newNode.props;
+  var propsPatches = {};
+  // 查找属性值不同的属性
+  for (var key in oldProps) {
+    if (newProps[key] !== oldProps[key]) {
+      count++;
+      propsPatches[key] = newProps[key];
+    }
+  }
+  // 查找新属性
+  for (var key in newProps) {
+    if (!oldProps.hasOwnProperty(key)) {
+      count++;
+      propsPatches[key] = newProps[key];
+    }
+  }
+  // 没有属性改变
+  if (count === 0) {
+    return null;
+  }
+  return propsPatches;
+}
+
+function isIgnoreChildren(node) {
+  return node.props && node.props.hasOwnProperty("ignore");
+}
+```
+
+这样我们就实现了对两个 Virtual DOM 树的比较，并且返回一个 patches 对象，记录了节点之间的差异。当然，你马上会发现这段代码还无法使用，因为其中有一个对象 patch 和一个方法 listDiff 没有实现。接下来对其进行详细说明。
+
+**(2) 标记节点之间的差异类型**
+当我们对 DOM 节点进行对比的时候，需要对差异进行标记，这样就能告诉程序两个节点之间的差异类型，以便程序根据不同类型执行不同的操作。
+
+DOM 操作导致的差异类型主要包括以下几点：
+
+- 节点替换：节点改变了，例如将上面的 div 换成 h1;
+- 顺序互换：移动、删除、新增子节点，例如上面 div 的子节点，把 p 和 ul 顺序互换；
+- 属性更改：修改了节点的属性，例如把上面 li 的 class 样式类删除；
+- 文本改变：改变文本节点的文本内容，例如将上面 p 节点的文本内容更改为 “Virtual DOM2”；
+
+为了描述上述的差异，我们新建一个 patch.js(之所以要新建一个文件是因为在 patch.js 中我们还要实现操作真是 DOM 的操作)
+
+```js
+var REPLACE = 0; // 替换原先的节点
+var REORDER = 1; // 重新排序
+var PROPS = 2; // 修改了节点的属性
+var TEXT = 3; // 文本内容改变
+
+function patch(node, patches) {
+  //实现操作真实DOM的代码,暂时不写
+}
+patch.REPLACE = REPLACE;
+patch.REORDER = REORDER;
+patch.PROPS = PROPS;
+patch.TEXT = TEXT;
+
+export default patch;
+```
+
+**（3）列表对比算法(性能优化)**
+到此为止,一切都显得自然而简单,我们对比两颗 Virtual DOM 树,生成差异对象,再通过差异对象来操作真实 DOM. 但是其有很大的性能优化空间:
+**列表对比**:
+我们先看一下这两棵 Virtual DOM:
+
+```js
+var virtualDom = el("div", { id: "virtual-dom" }, [el("p", {}, ["Virtual DOM"]), el("ul", { id: "list" }, [el("li", { class: "item" }, ["Item 1"]), el("li", { class: "item" }, ["Item 2"]), el("li", { class: "item" }, ["Item 3"])]), el("div", {}, ["Hello World"])]);
+
+//再新建一颗Virtual-Dom
+var virtualDom2 = el("div", { id: "virtual-dom" }, [el("ul", { id: "list" }, [el("li", { class: "item" }, ["Item 1"]), el("li", { class: "item" }, ["Item 2"]), el("li", { class: "item" }, ["Item 3"])]), el("div", {}, ["Hello World"]), el("p", {}, ["Virtual DOM"])]);
+```
+
+在这两棵树中,子节点的顺序从 p,ul,div 变成了 ul,div,p .如果我们按照同层级进行顺序对比的话,他们都会标记为 replace.进而都被替换掉.这样一来 DOM 操作的开销就会很大 . 实际上我们无需进行替换节点,只要通过移动节点就可以了.
+
+上面这个问题抽象出来其实就是 字符串的最小编辑问题([EditionDistance](https://blog.csdn.net/zp1996323/article/details/51702991))
+
+对于一个解决问题为主的工程师来说没,了解 Edition Distance 其实没什么用,而且你也很快会忘掉.所以这里先放结论 : 为了解决列表对比的问题, 我们采用了插件 [list-diff2](https://github.com/livoras/list-diff) 算法. 我这个算法的核心文件引用到了项目的 list-diff.js 中, EditionDistance 的算法原理在本文最后,时间多的用不完的你可以看一看.
+
+list-diff2 的代码如下, 你可以新建一个 list-diff.js 篇幅所限, 本文代码在 [virtual-DOM 中](https://github.com/Wuriqilang/PlayGround/tree/master/Virtual%20Dom)
+
+接下来只需要将写好的 patch.js 和 list-diff.js 引入到 diff.js 中即可. 再次郑重说明,本文项目采用了 ES Module 引用方式,无需 nodejs 环境,引用时注意 import 语法
+
+```js
+import patch from "./patch.js"; //存放差异类型
+import listDiff from "./uilts/list-diff.js"; //实现列表对比算法
+```
+
+现在我们测试一下效果吧. 改写 html 页面如下:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Virtual DOM实现</title>
+  </head>
+
+  <body>
+    <div id="virtual-dom">
+      <p>Practical DOM</p>
+      <ul id="list">
+        <li class="item">Item 1</li>
+        <li class="item">Item 2</li>
+        <li class="item">Item 3</li>
+      </ul>
+      <div>Hello World</div>
+    </div>
+    <script type="module">
+      import el from "./Element.js";
+      import diff from "./diff.js";
+
+      var virtualDom = el("div", { id: "virtual-dom" }, [el("p", {}, ["Virtual DOM"]), el("ul", { id: "list" }, [el("li", { class: "item" }, ["Item 1"]), el("li", { class: "item" }, ["Item 2"]), el("li", { class: "item" }, ["Item 3"])]), el("div", {}, ["Hello World"])]);
+      console.log("Virtual Dom:");
+      console.log(virtualDom);
+      console.log("Practical Dom:");
+      console.log(document.getElementById("virtual-dom"));
+      //渲染虚拟DOM
+      var ulRoot = virtualDom.render();
+      document.body.appendChild(ulRoot);
+
+      //再新建一颗Virtual-Dom
+      var virtualDom2 = el("div", { id: "virtual-dom2" }, [el("p", {}, ["Virtual DOM2"]), el("ul", { id: "list" }, [el("li", { class: "item" }, ["Item 21"]), el("li", { class: "item" }, ["Item 23"])]), el("p", {}, ["Hello World"])]);
+
+      //对比两棵树差异
+      var patches = diff(virtualDom, virtualDom2);
+      console.log("patches:", patches);
+    </script>
+  </body>
+</html>
+```
+
+在这个例子中,我们写了两个 Virtual DOM, 调用 diff.js 来比较两棵树的差异,生成 patches.这样我们就可以通过这个差异对象来更改真实 DOM 结构. 从而在尽量少的 DOM 操作前提下,完成 DOM 树的更新.
+
+![](https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/posts/1594286825417.PNG)
+
+#### 3.2.3 将差异对象(patches) 应用到真实 DOM 树
+
+因为 3.2.1 中我们通过 Virtual DOM 构建出的真实 DOM 树与 Virtual DOM 信息、结构是完全相同的.所以我们对真实 DOM 也进行深度优先遍历,遍历的过程中与 patches 相互对比:
+
+我们在 path.js 中写出相关代码:
+
+```js
+function patch(node, patches) {
+  var walker = { index: 0 }; //记录节点位置
+  dfsWalk(node, walker, patches); //深度优先遍历真实DOM
+}
+
+function dfsWalk(node, walker, patches) {
+  //从patches中拿出差异
+  var currentPatches = patches[walker.index];
+
+  var len = node.childNodes ? node.childNodes.length : 0;
+  //深度遍历子节点
+  for (var i = 0; i < len; i++) {
+    var child = node.childNodes[i];
+    walker.index++;
+    dfsWalk(child, walker, patches);
+  }
+  //对当前节点进行DOM操作
+  if (currentPatches) {
+    applyPatches(node, currentPatches);
+  }
+}
+```
+
+在这个递归函数中,我们每一次递归都会调用 applyPatches 函数,这个函数就是用操作真实 DOM 的函数.其核心代码如下，详细代码请参照: [virtual-DOM 中](https://github.com/Wuriqilang/PlayGround/tree/master/Virtual%20Dom)
+
+```js
+function applyPatches(node, currentPatches) {
+  currentPatches.forEach((currentPatch) => {
+    switch (currentPatch.type) {
+      case REPLACE:
+        var newNode = typeof currentPatch.node === "string" ? document.createTextNode(currentPatch.node) : currentPatch.node.render();
+        node.parentNode.replaceChild(newNode, node);
+        break;
+      case REORDER:
+        reorderChildren(node, currentPatch.moves);
+        break;
+      case PROPS:
+        setProps(node, currentPatch.props);
+        break;
+      case TEXT:
+        node.textContent = currentPatch.content;
+        break;
+      default:
+        throw new Error("Unknown patch type" + currentPatch.type);
+    }
+  });
+}
+```
+
+这样，Vitural DOM 核心功能就完成了啦。 接下来我们对 html 做一些修改，让我们的 Virtual DOM 系统更加直观,并且能够反应 Vitural Dom 系统的性能.
+这段为了实现浏览器原生 ES Module(脱离 nodejs webpack) 加载模块的方式,对于代码进了一些设计,你可以结合 ES Module 相关知识理解一下.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Virtual DOM实现</title>
+    <style>
+      body {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+
+      #Practical-dom,
+      #virtual-dom,
+      #virtual-dom2 {
+        width: 300px;
+        border: 1px solid red;
+        border-radius: 10px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+      .button {
+        width: 300px;
+        padding: 10px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>virtual-dom系统</h1>
+    <div id="Practical-dom">
+      <p>Practical DOM（一个真实DOM）</p>
+      <ul id="list">
+        <li class="item">Item 1</li>
+        <li class="item">Item 2</li>
+        <li class="item">Item 3</li>
+      </ul>
+      <div>Hello World</div>
+    </div>
+    <br />
+    <br />
+
+    <button class="button" onclick="renderDom1()">渲染virtualDOM1</button>
+    <button class="button" onclick="renderDom2()">直接渲染virtualDOM2</button>
+    <button class="button" onclick="diff()">通过diff算法对比后更新真实DOM1</button>
+
+    <script type="module">
+      import el from "./Element.js";
+      import diff from "./diff.js";
+      import patch from "./patch.js";
+
+      console.log("Practical Dom:");
+      console.log(document.getElementById("Practical-dom"));
+      window.vd = { el, diff, patch }; //将el diff patch放入全局作用域中
+    </script>
+
+    <script>
+      var ulRoot; //定义一个对象存放生成的真实DOM对象
+      var ulRoot2; ///定义一个对象存放生成的真实DOM对象
+      var virtualDom;
+      var virtualDom2;
+      var patches;
+      window.onload = function () {
+        //这里需要使用onload包裹起来,否则无法等待异步es module执行完毕
+        var el = window.vd.el;
+        //定义一颗Virtual Dom
+        virtualDom = el("div", { id: "virtual-dom" }, [el("p", {}, ["Virtual DOM"]), el("ul", { id: "list" }, [el("li", { class: "item" }, ["Item 1"]), el("li", { class: "item" }, ["Item 2"]), el("li", { class: "item" }, ["Item 3"])]), el("div", {}, ["Hello World"])]);
+        //再新建一颗Virtual-Dom
+        virtualDom2 = el("div", { id: "virtual-dom2" }, [el("p", {}, ["Virtual DOM2"]), el("ul", { id: "list" }, [el("li", { class: "item" }, ["Item 21"]), el("li", { class: "item" }, ["Item 23"])]), el("p", {}, ["Hello World"])]);
+      };
+      //渲染虚拟DOM
+      function renderDom1() {
+        console.log("Virtual Dom:");
+        console.log(virtualDom);
+        console.time("直接渲染耗时");
+        ulRoot = virtualDom.render();
+        document.body.appendChild(ulRoot);
+        console.timeEnd("直接渲染耗时");
+      }
+      //渲染虚拟DOM2
+      function renderDom2() {
+        console.log("Virtual Dom2:");
+        console.log(virtualDom2);
+        console.time("直接渲染耗时");
+        ulRoot2 = virtualDom2.render();
+        document.body.appendChild(ulRoot2);
+        console.timeEnd("直接渲染耗时");
+      }
+      function diff() {
+        console.time("diff算法后渲染耗时");
+        //对比两棵树差异
+        patches = window.vd.diff(virtualDom, virtualDom2);
+        // console.log('差异对象patches:', patches);
+        window.vd.patch(ulRoot, patches);
+        console.timeEnd("diff算法后渲染耗时");
+      }
+    </script>
+  </body>
+</html>
+```
+
+Virtual Dom 效果如下:
+
+![](https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/posts/1594607533007.gif)
+
+你会发现使用 diff 再进行渲染的方法似乎比直接渲染真实 Dom 更加耗时,这是因为我们例子中的 Virtual-Dom 简单十分简单导致的, 随着页面 DOM 结构复杂程度的增加,diff 算法的优势也会越明显.
+
+**本文源代码** [virtual-DOM 中](https://github.com/Wuriqilang/PlayGround/tree/master/Virtual%20Dom) 请参考
+
+- 参考文献：
+  [chrome 浏览器页面渲染工作原理浅析-知乎大金](chrome浏览器页面渲染工作原理浅析)
+  [浏览器内核-渲染引擎、js 引擎](https://blog.csdn.net/BonJean/article/details/78453547)
+  [浏览器之渲染引擎-掘金 26000 步](https://juejin.im/post/5c903e23e51d45656442c5e2)
+  [EditionDistance](https://blog.csdn.net/zp1996323/article/details/51702991)
+  [字符串相似度算法——Levenshtein Distance 算法](https://www.cnblogs.com/xiaoyulong/p/8846745.html)
+
+- 附:diff 算法原理
+
+列表对比问题抽象出来其实就是字符串的最小编辑距离问题（Edition Distance），所谓最小编辑距离问题, 就是假设有两个字符串 A 与 B, 怎样通过字符的插入、删除或者替换手段，用最少的步骤让 B 改变为 A 的问题.
+
+这个问题最常见的解决方法是 Levenshtein Distance ,Levenshtein Distance 是 1965 年由苏联数学家 Vladimir Levenshtein 发明的。Levenshtein Distance 也被称为编辑距离（Edit Distance），其原理是通过动态规划求解，时间复杂度为 O(M\*N)。
+
+定义：对于两个字符串 a、b，则他们的 Levenshtein Distance 为：
+
+![](https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/posts/1594608157829.PNG)
+
+示例：字符串 a 和 b，a=“abcde” ，b=“cabef”，根据上面给出的计算公式，则他们的 Levenshtein Distance 的计算过程如下：
+
+![](https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/posts/1594608194253.PNG)
+
+因为篇幅所限，对于该算法你可以看一下这篇文章，写的非常详细
+[字符串相似度算法——Levenshtein Distance 算法](https://www.cnblogs.com/xiaoyulong/p/8846745.html)
