@@ -88,6 +88,8 @@ export const config: Config = {
       attributes: {
         url: { type: String, required: true },
         title: { type: String, required: true },
+        user: { type: String, required: false, default: "wuriqilang" },
+        slug: { type: String, required: true },
       },
       selfClosing: true,
     },
@@ -134,17 +136,9 @@ export const config: Config = {
         const attributes = node.transformAttributes(config);
         const children = node.transformChildren(config);
         if (children.some((child) => typeof child !== "string")) {
-          throw new Error(
-            `unexpected non-string child of code block from ${
-              node.location?.file ?? "(unknown file)"
-            }:${node.location?.start.line ?? "(unknown line)"}`
-          );
+          throw new Error(`unexpected non-string child of code block from ${node.location?.file ?? "(unknown file)"}:${node.location?.start.line ?? "(unknown line)"}`);
         }
-        return new Tag(
-          this.render,
-          { ...attributes, content: children.join("") },
-          []
-        );
+        return new Tag(this.render, { ...attributes, content: children.join("") }, []);
       },
     },
   },

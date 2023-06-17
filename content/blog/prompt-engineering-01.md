@@ -9,15 +9,16 @@ date: 2023-06-18 00:17:00
 
 ## 1. 什么是 Prompt Engineering
 
-大语言模型（LLM）在语料库上训练之后，并不能达到如 ChatGPT 那般令人惊艳的效果。本质上 LLM 的能力就是给定一段文字，进行续写。
+大语言模型（LLM）在语料库上训练之后，并不能达到如 ChatGPT 那般令人惊艳的效果。因为本质上 LLM 的能力就是给定一段文字，进行续写。
 
 - Base LLM: 基于大量数据训练的模型.
   当我们提问: "如何画一个圆?"
   模型会回答:
   ![如何画一个圆](https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/8fS0aK.png)
 
-- Instruction Tuned LLM:
-  要让 LLM 显得更加智能，以人类能接受的方式生成回答，ChatGPT 用到了 RLHF (Reinforcement learning with human feedback) 的技术。经过 RLHF 微调的模型，我们叫做 Instruction Tuned LLM
+但是在实际应用中，我们需要的是给定一个问题，生成一个答案。这就需要我们对 LLM 进行 Prompt Tuneing，即通过一些技巧，让 LLM 在给定 prompt 的情况下，生成我们想要的答案。
+
+- Instruction Tuned LLM: 通过 Prompt Engineering 之后的模型.
 
 举个例子:
 在我们提问前,我们可以通过 prompt 来指导模型生成特定的文本.如:
@@ -26,6 +27,8 @@ date: 2023-06-18 00:17:00
 这时当我们提问: "如何画一个圆?"
 模型就会在我们圈定的范围内给出合乎我们预期的答案.
 ![如何画一个圆](https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/zE4C3m.png)
+
+ChatGPT 用到了 RLHF (Reinforcement learning with human feedback) 的技术。
 
 > 注 1：最早把强化学习引入语言模型中的，是 OpenAI 在 2019 年的一篇工作：Fine-Tuning Language Models from Human Preferences
 > 注 2：RLHF 并不能有效提升模型的跑分，在小模型上性能甚至会有比较大的下降（随着参数增多，RLHF 微调会稍微增强性能），但是可以让它“显得”更智能
@@ -48,10 +51,12 @@ date: 2023-06-18 00:17:00
 
 ### 2.1 环境安装
 
-本课程为实践课程,需要实机操作,既然是学习,咱们就一切从简,直接在也可以在本地搭建环境,
-但是你也可以使用 [Google Colab](https://colab.research.google.com/),它可以免费使用 GPU,而且不需要配置环境,直接上手.
+本课程为实践课程,当然需要配置环境啦.
+既然是学习,咱们就一切从简,直接在在本地搭建环境
 
-> 因为在访问 openai API 本来就需要科学上网,所这里我默认你已经具备了对应的网络条件.
+但是你也可以使用 [Google Colab](https://colab.research.google.com/),它不需要配置环境,直接上手.
+
+> 注:因为在访问 openai API 本来就需要科学上网,所这里我默认你已经具备了对应的网络条件.
 
 1. 安装 python (推荐使用 anaconda )
 
@@ -62,13 +67,13 @@ pip install openai
 pip install python-dotenv
 ```
 
-3. 创建 .env 文件,并在其中添加你的 openai API key
+3. 新建一个文件夹,在文件夹里创建 .env 文件,并在其中添加你的 openai API key
 
 ```bash
 OPENAI_API_KEY='sk-XXXXX'
 ```
 
-4. 创建 python 文件,并在其中添加如下代码
+4. 创建一个 python 文件,并在其中添加如下代码
 
 ```python
 import openai
@@ -90,6 +95,8 @@ def get_completion(prompt, model = "gpt-3.5-turbo"):
 ```
 
 ### 2.2 编写原则
+
+我们先来介绍几个基本的编写 prompt 的原则
 
 #### 2.2.1 编写清晰、具体的指令
 
