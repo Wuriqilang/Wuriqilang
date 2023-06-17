@@ -1,6 +1,6 @@
 ---
 external: false
-title: [大语言] Prompt Engineering 01
+title: 【大模型】 Prompt Engineering 01
 description: 2023 年,chatGPT 如春雷乍响,开启了人工智能的新纪元. 我也开启了我的第一课
 date: 2023-06-18 00:17:00
 ---
