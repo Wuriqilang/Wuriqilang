@@ -1,10 +1,13 @@
 ---
+function toBlog() {
+  console.log("123");
+}
 ---
 
 <section class="mb-8">
   <div class="mb-6">
     <h1 class="font-bold text-text-heading text-center text-4xl md:text-5xl pt-4 pb-2 overflow-hidden">
-      <span class="bg-gradient-to-bl bg-no-repeat bg-bottom bg-[length:90%_40%] from-primary-blue to-primary-blue dark:from-primary-blue dark:to-primary-blue"> Wuriqilang's MageTower</span>
+      <span id="title" class="bg-gradient-to-bl bg-no-repeat bg-bottom bg-[length:90%_40%] from-primary-blue to-primary-blue dark:from-primary-blue dark:to-primary-blue hover:cursor-pointer transition ease-in-out delay-150 hover:bg-indigo-500 duration-300"> Wuriqilang's MageTower</span>
     </h1>
   </div>
   <div>
@@ -14,3 +17,10 @@
     <script async defer src="https://cpwebassets.codepen.io/assets/embed/ei.js"></script>
   </div>
 </section>
+
+<script>
+  // @ts-nocheck
+  document.querySelector("#title").addEventListener("click", () => {
+    window.location.href = "/blog";
+  });
+</script>
