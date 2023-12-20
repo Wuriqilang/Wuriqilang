@@ -1,5 +1,7 @@
 # build output
 dist/
+.output/
+.json/
 
 # dependencies
 node_modules/
@@ -9,6 +11,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+yarn.lock
+package-lock.json
 
 
 # environment variables
@@ -18,11 +22,6 @@ pnpm-debug.log*
 # macOS-specific files
 .DS_Store
 
-# yarn
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/sdks
-!.yarn/versions
+# ignore .astro directory
+.astro
+node_modules

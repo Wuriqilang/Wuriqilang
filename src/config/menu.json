@@ -1,0 +1,32 @@
+{
+  "main": [
+    {
+      "name": "Home",
+      "url": "/"
+    },
+    {
+      "name": "Blog",
+      "url": "/blog",
+      "hasChildren": false,
+      "children": [
+        {
+          "name": "Blog",
+          "url": "/blog"
+        },
+        {
+          "name": "Categories",
+          "url": "/categories"
+        },
+        {
+          "name": "Tags",
+          "url": "/tags"
+        },
+        {
+          "name": "404 Page",
+          "url": "/404"
+        }
+      ]
+    }
+  ],
+  "footer": []
+}

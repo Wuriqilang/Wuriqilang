@@ -1,0 +1,37 @@
+{
+  "site": {
+    "title": "Wuriqilang's Blog | MageTower",
+    "base_url": "https://wuriqilang.com",
+    "base_path": "/",
+    "trailing_slash": false,
+    "favicon": "/images/favicon.png",
+    "logo": "/images/logo.png",
+    "logo_darkmode": "/images/logo-darkmode.png",
+    "logo_width": "150",
+    "logo_height": "30",
+    "logo_text": "乌日其浪"
+  },
+  "settings": {
+    "search": true,
+    "sticky_header": true,
+    "theme_switcher": true,
+    "default_theme": "system",
+    "pagination": 6,
+    "summary_length": 80,
+    "blog_folder": "blog"
+  },
+  "params": {
+    "contact_form_action": "#",
+    "copyright": "Designed And Developed by [Wuriqilang](https://wuriqilang.com)"
+  },
+  "navigation_button": {
+    "enable": true,
+    "label": "Give me a Star!",
+    "link": "https://github.com/wuriqilang"
+  },
+  "metadata": {
+    "meta_author": "wuriqilang",
+    "meta_image": "/images/og-image.png",
+    "meta_description": "乌日其浪的法师塔,在这里研究失传已久的程序魔法"
+  }
+}
