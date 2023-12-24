@@ -1,0 +1,221 @@
+---
+title: Chrome宣布禁用三方Cookie,浅谈Cookie相关的知识点
+description: 2024年1月开始,Chrome将逐步取消对第三方coookie的支持,蹭个热点,复习一下cookie相关的知识点.
+date: 2023-12-21
+image: "https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-12/IVCqrD.png"
+author: 乌日其浪
+categories: [前端拾遗, 热点追踪]
+tag: [cookie, 安全]
+---
+
+2023年末,在Google的博客[Prepare for phasing out third-party cookies](https://developers.google.cn/privacy-sandbox/3pcd?hl=zh-cn)明确表示Chrome将从2024.1.1开始逐步取消对第三方cookie的支持.
+正好借着这个机会,我们聊一聊为什么要禁用第三方cookie,cookie存在哪些问题,以及复习一下cookie的相关知识点.
+
+### 什么是第三方cookie
+
+所谓第三方Cookie是指由用户当前访问的网站域名之外的其它域名下存储和操作的Cookie，用户和当前访问网站是第一，网站中嵌入的其它域名服务就属于第三方。
+
+举个例子🌰:
+
+1. 用户在A网站上浏览,此时A网站种下的cookie就是第一方cookie
+2. A网站下嵌入了B网站的广告,此时B网站种下的cookie就是第三方cookie
+
+再举个例子🌰:
+
+譬如我们做了一个图床(https://image.com),
+
+1. 某个博主在自己的博客(blog.com)中嵌入我们的图片时.普通用户阅读他的博客时 这时候我们就会种一个cookie.(如:user=xxx)
+2. 普通用户关闭了博客(blog.com),去购物网站(buy.com)购买商品时,因为商品详情页中也嵌入了我们的图片,所以他会带着我们之前种下的cookie(user=xxx)去访问我们的图床.
+3. 我们的图床(image.com)就会根据cookie(user=xxx)就可以知道这个用户是谁,他在博客中看了哪些图片,在购物网站中看了哪些图片,这样我们就可以根据这些信息做一些推荐.
+
+还是举个例子🌰:
+
+如果是你正常的正在逛着天猫，天猫会把你的信息写入一些 Cookie 到 .tmall.com 这个域下.
+然而打开控制台你会看到，并不是所有 Cookie 都是 .tmall.com 这个域下的，里面还有很多其他域下的 Cookie ，这些所有非当前域下的 Cookie 都属于第三方 Cookie，
+虽然你可能从来没访问过这些域，但是他们已经悄悄的通过这些第三方 Cookie来标识你的信息，然后把你的个人信息发送过去了。
+
+![chrome天猫cookie](https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-12/xatrv3.png)
+
+而 .tmall.com 这个域下的 Cookie 都属于第一方 Cookie，那么为什么还需要第三方 Cookie 呢？
+再打开 taobao.com，你会发现你已经不需要再登录了，因为淘宝、天猫都属于阿里旗下的产品，阿里为他们提供统一的登录服务，同时，你的登录信息也会存到这个统一登录服务的域下，所以存到这个域下的 Cookie 就成了三方 Cookie。
+
+我们再打开已经完全禁用了第三方 Cookie 的 Safari，发现只剩下 .tmall.com 这个域下的 Cookie 了。
+
+![safrai天猫cookie](https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-12/BW3gMZ.png)
+
+这时你会发现即使你已经登录了天猫，再访问淘宝也还是需要登录的，你已经无法享用这样的功能了.
+
+> 简单来说,只要cookie的domain不是当前网站的域名,就是第三方cookie.
+
+### 第三方cookie有什么使用场景
+
+第三方cookie主要用于广告追踪,用户行为分析,用户画像,前端埋点等场景.
+
+1. 用户行为统计: 许多web网站会用第三方sdk来监控网站性能.如:百度统计,友盟统计,Google Analytics等.一般这些SDK都需要标识用户来方便排查问题或者统计UV数据,所以当你访问主站点时,SDK都会种下cookie,后续你所有的上报日志都会携带这个Cookie.以便于分析用户行为,优化网站性能.
+   ![前端埋点](https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-12/rrz2fu.png)
+2. 精准广告营销: 当我们在搜索引擎或者视频网站上搜索一些关键词时，然后打开购物网站时就会出现我们刚才搜索过的关键词的相关产品推送。(如阿里妈妈的mmstat,facebook的facebook pixel)
+
+### 第三方cookie存在的问题
+
+1. 隐私泄露: 第三方cookie可以跨域,所以当你在A网站上登录了,然后在B网站上也会带着A网站的cookie,这样B网站就可以知道你在A网站上的一些信息.这样就会造成隐私泄露.
+2. 安全问题:
+
+- 跨站点请求伪造（CSRF 或 XSRF）： Cookie 可能包含有价值的信息，但它们不是很聪明——以至于它们无法判断请求是来自受信任的用户还是来自其他人。因此，许多恶意第三方使用 cookie 来执行 CSRF 攻击。这些攻击通过受信任的网站将有害的cookies潜入用户的浏览器中，仅让他们在用户访问的各个网站上执行恶意请求（例如删除文件）。
+- 跨站点脚本 (XSS)：被入侵的网站通常被用作托管 XSS 攻击的平台。在这些攻击中，黑客向网站发布恶意 JavaScript 或 HTML 代码，这些代码可用于向毫无戒心的用户请求 cookie 和其他数据。由于 cookie 可以包含敏感信息，例如登录信息，因此它们是许多黑客攻击的可口奖励。
+- 会话固定：正如我们所见，cookie 通常用于让您在两次站点访问之间保持登录状态。这是通过会话cookie完成 的，只要您的浏览器打开，它就会存储一个唯一的会话 ID 。不幸的是，黑客有可能通过在他们发送给您的 URL中指定他们自己的会话 ID 来劫持您的登录凭据。如果您通过其中一个 URL 登录，黑客可以访问您在特定网站上的帐户。
+- Cookie 捕获：在最佳情况下，用于身份验证的会话 cookie 和其他类型通过安全的SSL 或 TLS通道发送。但是，由于这取决于网站，因此并不总是这样做。在通过安全通道发送的 cookie 带有“安全”标志且无法读取的情况下，不安全发送的 cookie 可以。因此，许多黑客会监听这些不安全的连接，试图获取有价值的用户数据。
+
+### 第三方cookie是如何实现的
+
+因为safari与firefox已经禁用了第三方cookie,所以我们这里只讨论chrome的实现方式.
+
+```js
+  var cookie = require('cookie');
+
+  res.setHeader('Set-Cookie', cookie.serialize('name', 'value', {
+    sameSite: 'none',
+    httpOnly: true,
+    path: '/',
+    maxAge: 60 _ 60 _ 24 \* 7 // 1 week
+  }));
+
+```
+
+### 第三方cookie全面禁用后如何应对?
+
+1. 使用一方cookie代替: 如facebook pixel的方案,你允许了其读取一方 Cookie 就意味着它能获取你更多的数据，这意味着你需要承担更大的用户信息泄漏的风险。而且使用一方 Cookie 也不像使用三方 Cookie 那样灵活，在某些场景下也是有很大限制的。
+   ![facebook](https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-12/Uo9Ckg.png)
+2. 浏览器指纹:三方 Cookie 的主要作用是标识你的身份，从而在你下一次访问时知道你是谁，那么如果有一种技术直接就可以获取你的唯一标识时，那么就不需要再存储 Cookie 了，这个技术就是 “浏览器指纹” 。
+3. Canvas指纹: 浏览器在绘制图形时，会调用操作系统的绘图接口，即便使用 Cavans 绘制相同的元素，但是由于系统的差别，不同浏览器使用了不同的图形处理引擎、不同的图片导出选项、不同的默认压缩级别、对抗锯齿、次像素渲染等算法也不同。
+
+### 复习一下cookie相关的知识
+
+1. Cookie与Session的区别?
+
+HTTP是一种无状态协议，无状态是指服务端对于客户端每次发送的请求都认为它是一个新的请求，上一次会话和下一次会话没有联系。
+但是，很多场景下，我们需要知道下一次的会话和上一次的会话的关系（比如登陆之后我们需要记住登陆状态），这个时候就引入了Cookie和Session体系。
+
+- Cookie： 客户端请求服务器时，如果服务器需要记录该用户状态，就通过response Headers向客户端浏览器颁发一个Cookie，而客户端浏览器会把Cookie保存起来。当浏览器再请求服务器时，浏览器把请求的网址连同该Cookie一同提交给服务器。服务器通过检查该Cookie来获取用户状态。
+- Session： 当服务器接收到请求时，就从存储在服务器上的无数session信息中去查找客户端请求时带过来的cookie的状态。如果服务器中没有这条session信息则添加一条session信息。
+
+本来 session 是一个抽象概念，开发者为了实现中断和继续等操作，将 user agent 和 server 之间一对一的交互，抽象为“会话”，进而衍生出“会话状态”，也就是 session 的概念。 而 cookie 是一个实际存在的东西，http 协议中定义在 header 中的字段。可以认为是 session 的一种后端无状态实现。
+
+而我们今天常说的 “session”，是为了绕开 cookie 的各种限制，通常借助 cookie 本身和后端存储实现的，一种更高级的会话状态实现。
+
+2. cookie存储在哪里?
+
+cookie一般是被浏览器以txt的形式存储在电脑硬盘中，供该浏览器进行读、写操作。
+
+3. cookie是如何工作的？
+
+request: 当浏览器发起一个请求时，浏览器会自动检查是否有相应的cookie，如果有则将cookie添加到Request Headers的Cookie字段中（cookie字段是很多name=value以分号分隔的字符串）。
+response: 服务器在响应浏览器的请求时，会在Response Headers中添加Set-Cookie字段，浏览器会将该字段中的cookie保存到本地。
+
+浏览器端:
+
+- 读cookie
+
+```js
+console.log(document.cookie); // cna=8fDUF573wEQCAWoLI8izIL6X; xlly_s=1; t=4a2bcb7ef27d32dad6872f9124694e19; _tb_token_=e3e11308ee6fe; hng=CN%7Czh-CN%7CCNY%7C156; thw=cn;  v=0;
+```
+
+读取后的cookie是一个字符串，包含了所有cookie的name和value（用分号分隔），需要我们自行将cookie解析出来。
+
+- 写cookie
+
+```js
+document.cookie = "uid=123;expires=Mon Jan 04 2022 17:42:40 GMT;path=/;secure;";
+document.cookie =
+  "uid=123;expires=Mon Jan 04 2022 17:42:40 GMT;path=/caikuai;domain=edu.360.cn;secure;samesite=lax";
+```
+
+一次只能写一个cookie，想要写多个cookie需要操作多次。
+
+- 删除cookie
+
+```js
+document.cookie =
+  "uid=dkfywqkrhkwehf23;expires=" + new Date(0) + ";path=/;secure;";
+```
+
+- 修改cookie
+  重新赋值就好，旧值会覆盖新值。注意Path不变,否则会被认为是新的cookie.
+
+只需要将一个已经存在的cookie名字过期时间设置为过去的时间即可。
+
+- 服务器端
+
+- 读cookie
+
+```js
+res.setHeader("Set-Cookie", ["uid=123;maxAge: 900000; httpOnly: true"]);
+// 或者
+res.cookie("uid", "123", { maxAge: 900000, httpOnly: true });
+```
+
+- 写cookie
+
+```js
+console.log(req.getHeader("Cookie")); // 拿到所有cookie
+// 或者
+console.log(req.cookie.name);
+```
+
+4. cookie各属性详解
+
+| #   |      item       |                                                           解释                                                            |
+| :-- | :-------------: | :-----------------------------------------------------------------------------------------------------------------------: |
+| 1   |      Name       |                                                         cookie名                                                          |
+| 1   |      Value      |                                                         cookie值                                                          |
+| 3   |     Domain      | cookie的域名。如果设成.example.com，那么子域名a.example.com和b.example.com，都可以使用.example.com的cookie;反之则不可以。 |
+| 4   |      Path       |   cookie的路径。如果设成/，那么只有路径是/的网页才能使用cookie。如果设成/dir，那么只有路径是/dir的网页才能使用cookie。    |
+| 5   | Expires/Max-Age |                                 cookie的有效期。如果不设置，cookie会在浏览器关闭后失效。                                  |
+| 6   |    HttpOnly     |                              设置为true时，只有http能读取。js只能读取未设置HttpOnly的cookie                               |
+| 7   |     Secure      |                                       标记为Secure的cookie，只有https的请求可以携带                                       |
+| 8   |    SameSite     |         限制第三方url是否可以携带cookie。有3个值：Strict/Lax(默认)/None。（chrome51新增属性，chrome80+强制执行）          |
+
+- Strict: 仅允许发送同站点请求的的cookie
+- Lax: 允许部分第三方请求携带cookie，即导航到目标网址的get请求。包括超链接 ，预加载<link rel="prerender" />和get表单<form method="GET" />三种形式发送cookie
+- None: 任意发送cookie，设置为None，（需要同时设置Secure，也就是说网站必须采用https）
+- Priority：优先级，chrome的提案（firefox不支持），定义了三种优先级，Low/Medium/High，当cookie数量超出时，低优先级的cookie会被优先清除。
+
+5. cookie 的共享策略是什么
+   domain和path共同决定了cookie可以被哪些url访问。
+
+访问一个url时，如果url的host与domain一致或者是domain的子域名，并且url的路径与path部分匹配，那么cookie才可以被读取。
+![](https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-12/tSAtwg.png)
+
+如上图所示,各种情况下cookie的共享策略如下:
+
+| url                             | uid1 | uid2 | uid3 |
+| :------------------------------ | :--: | :--: | ---- |
+| https://edu.360.cn/caikuai/     |  √   |  √   | √    |
+| https://edu.360.cn/             |  √   |  √   | ×    |
+| https://360.cn/article/123.html |  ×   |  √   | ×    |
+
+6. 跨域请求中的cookie
+
+跨域请求（CORS）中的cookie
+首先cookie的SameSite需要设置为None。
+其次对于将Access-Control-Allow-Credentials设置为true的接口（表示允许发送cookie），需要我们在发送ajax请求时，将withCredentials属性设为true。
+
+7. 常用的cookie安全问题措施
+
+- XSS攻击:XSS漏洞的原理是，由于未对用户提交的表单数据或者url参数等数据做处理就显示在了页面上，导致用户提交的内容在页面上被做为html解析执行。
+
+  - 常规方案：对特殊字符进行处理，如"\<"和">"等进行转义。
+  - cookie的应对方案：对于用户利用script脚本来采集cookie信息，我们可以将重要的cookie信息设置为HttpOnly来避免cookie被js采集。
+
+- CSRF攻击:中文名叫跨站请求伪造，原理是，用户登陆了A网站，然后因为某些原因访问了B网站（比如跳转等），B网站直接发送一个A网站的请求进行一些危险操作，由于A网站处于登陆状态，就发生了CSRF攻击（核心就是利用了cookie信息可以被跨站携带）！
+
+  - 常规方案：采用验证码或token等。
+  - cookie的应对方案：由于CSRF攻击核心就是利用了cookie信息可以被跨站携带，那么我们可以对核心cookie的SameSite设置为Strict或Lax来避免。
+
+### 参考资料
+
+1. [第三方cookie用在哪里? -- 掘金](https://juejin.cn/post/6973996294540886046)
+2. [当浏览器全面禁用第三方cookie -- 掘金](https://juejin.cn/post/6844904128557105166)
+
+```
+
+```

@@ -10,7 +10,7 @@ const {
   blog_folder,
 }: { summary_length: number; blog_folder: string } = config.settings;
 const { data } = Astro.props;
-const { title, image, date, author, categories } = data.data;
+const { title, image, date, author, categories,description } = data.data;
 ---
 
 <div class="bg-body dark:bg-darkmode-body">
@@ -51,7 +51,7 @@ const { title, image, date, author, categories } = data.data;
     </li>
     {date && <li class="inline-block">{dateFormat(date)}</li>}
   </ul>
-  <p class="mb-6">{plainify(data.body?.slice(0, Number(summary_length)))}</p>
+  <p class="mb-6">{description}</p>
   <a
     class="btn btn-outline-primary btn-sm"
     href={`/${blog_folder}/${data.slug}`}

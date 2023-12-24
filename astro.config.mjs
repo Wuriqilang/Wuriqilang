@@ -13,6 +13,9 @@ export default defineConfig({
   site: config.site.base_url ? config.site.base_url : "http://wuriqilang.com",
   base: config.site.base_path ? config.site.base_path : "/",
   trailingSlash: config.site.trailing_slash ? "always" : "never",
+  server: {
+    port: 3000,
+  },
   image: {
     service: squooshImageService(),
   },
