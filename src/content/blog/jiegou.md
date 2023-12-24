@@ -2,7 +2,7 @@
 title: "一、几种最基础的数据结构"
 description: 数据结构是一切算法的基础,作为一个以解决问题为目的的工程师,在本文将会列举几种你一定会用到的数据结构,并尽量从实际出发来说明其作用.
 date: 2020-05-28 17:33:35
-tags: []
+tags: [数据结构]
 categories: [算法]
 image: https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/posts/jiegou.jpg
 ---

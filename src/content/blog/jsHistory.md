@@ -2,8 +2,8 @@
 title: "JS的历史"
 date: 2020-05-24 08:51:05
 description: 一切软件，终将用 JS 再实现一遍。
-tags: [值得一读]
-categories: [前端拾遗]
+tags: [JavaScript]
+categories: [值得一读]
 image: https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/posts/jsHistory.jpg
 ---
 

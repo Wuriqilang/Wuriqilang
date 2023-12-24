@@ -5,6 +5,7 @@ description: 凌晨时分，你写出一段代码，实现了某个算法，优�
 image: "https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/posts/1590598066901.jpg"
 author: "乌日其浪"
 categories: [算法]
+tags: [算法, 复杂度]
 ---
 
 凌晨时分，你写出一段代码，实现了某个算法，优雅如诗。默默在心底说一声：“NB！” 但你知道这注定无人知晓，因为身边早已寂静无声。

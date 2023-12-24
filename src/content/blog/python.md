@@ -3,7 +3,7 @@ title: "【编程只是一种工具】Python实用教程   介绍"
 description: 本文档专注于编程语言在工业领域的实际应用，以实例讲解为主，还原编程语言的工具属性。这里会主要告诉你一个“工具怎么用”、“为什么要用”，但是不会过多涉及到“工具如何制造”以及“怎么用才更好”的问题。
 date: 2020-01-22 21:45:15
 tags: [python]
-categories: ["语言学习"]
+catagories: [语言学习]
 image: https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/posts/python.jpg
 ---
 

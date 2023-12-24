@@ -3,7 +3,7 @@ title: "Python实用教程02  Python UI编程"
 description: 请在 VS Code 中新建一个.py 文件，输入以下内容。注意从现在开始，程序的输入切勿复制粘贴，自己敲进去代码和复制粘贴感觉是不同的！
 date: 2020-01-22 21:51:17
 tags: [python]
-categories: ["语言学习"]
+catagories: [语言学习]
 image: https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/posts/python-shi-yong-jiao-cheng-02-python-ui-bian-cheng.jpeg
 ---
 

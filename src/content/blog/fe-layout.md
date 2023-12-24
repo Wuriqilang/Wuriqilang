@@ -5,6 +5,7 @@ description: 前端布局
 image: "https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-12/6AwG1i.png"
 author: "乌日其浪"
 categories: [前端拾遗]
+tags: [CSS]
 ---
 
 ## 1. 实现盒子水平垂直居中的几种方案

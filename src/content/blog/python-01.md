@@ -3,6 +3,7 @@ title: "【编程只是一种工具】Python实用教程01  一句话表白 "
 description: 让我们做一个小游戏吧,体会一下 Python 独特的魅力。
 date: 2020-01-22 21:49:28
 tags: [python]
+catagories: [语言学习]
 image: https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/posts/python-jiao-cheng-01.png
 ---
 

@@ -2,7 +2,7 @@
 title: "SQL -- 数据批量插入"
 description: SQL -- 数据批量插入
 date: 2020-02-14 11:37:01
-tags: [SQL]
+tags: [SQL, 批量插入]
 categories: [代码仓库]
 image: https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/posts/sqlinsert.jpg
 ---

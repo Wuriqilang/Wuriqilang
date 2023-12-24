@@ -2,8 +2,8 @@
 title: "oh-my-zsh 配置"
 description: 工欲善其事必先利其器,经过多年的大浪淘沙,似乎 mac 系中终端的选择迎来版本最终答案. oh-my-zsh.
 date: 2022-07-24 01:54:35
-tags: ["代码仓库"]
-categories: ["Top100"]
+tags: [终端, zsh]
+categories: [Top100]
 image: https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2022-07/WcniMW.png
 ---
 

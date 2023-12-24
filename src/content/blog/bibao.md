@@ -5,6 +5,7 @@ date: 2020-05-25 15:22:23
 image: "https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-12/dmlaIz.png"
 author: "乌日其浪"
 categories: [前端拾遗]
+tags: [JavaScript, 闭包]
 ---
 
 > 之所以要分上下两个部分,是因为我实在是担心你没有耐心一口气读完全文. 但闭包之于 JS,就如同麻酱之于火锅. 那是灵魂

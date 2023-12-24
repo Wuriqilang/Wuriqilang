@@ -4,7 +4,8 @@ description: 2023 年,chatGPT 如春雷乍响,开启了人工智能的新纪元.
 date: 2023-06-18 00:17:00
 image: "https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/8fS0aK.png"
 author: "乌日其浪"
-categories: ["人工智能"]
+categories: [人工智能]
+tags: [大语言模型, Prompt]
 ---
 
 > 本文主要观点来自 [ChatGPT Prompt Engineering 吴恩达 Prompt](https://learn.deeplearning.ai/)

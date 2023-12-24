@@ -2,8 +2,8 @@
 title: "1个小时快速学习Go"
 description: "这里是值得投资的一个小时系列, 不说废话 , 希望这一个小时能给你带来一些微小而美好的改变"
 date: 2022-07-25 00:10:26
-tags: ["值得一读"]
 categories: ["语言学习"]
+tags: [Go]
 image: https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2022-07/VzRjXF.jpg
 ---
 

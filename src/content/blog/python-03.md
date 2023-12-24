@@ -3,6 +3,7 @@ title: "Python实用手册03 词云"
 description: 接下来，让我们一起来完成一项具有一定实际价值的工作吧!
 date: 2020-01-22 21:53:45
 tags: [python]
+catagories: [语言学习]
 image: https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/posts/python-shi-yong-shou-ce-03-ci-yun.png
 ---
 

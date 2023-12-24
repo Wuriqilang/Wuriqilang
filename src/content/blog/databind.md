@@ -5,6 +5,7 @@ description: 数据双向绑定，作为三大前端框架的重要特性，总�
 image: "https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-12/quSPyN.png"
 author: "乌日其浪"
 categories: [前端拾遗]
+tags: [源码, Vue]
 ---
 
 数据双向绑定，作为三大前端框架的重要特性，总是被人们津津乐道（尤其是面试官），defineProperty 啦，proxy 啦，digest 循环检查啦（AngularJS）……数据绑定的相关文章看了很多，但总是感觉差点意思,还是自己亲自实现一个数据绑定吧

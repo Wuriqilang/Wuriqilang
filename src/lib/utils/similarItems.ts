@@ -23,13 +23,25 @@ const similarItems = (currentItem: any, allItems: any[]) => {
     tags.find((tag) => item.data.tags.includes(tag)),
   );
 
+  // 查找两个arr的交集
+  const intersection = filterByCategories.filter((item) => {
+    return filterByTags.some((item2) => item.slug === item2.slug);
+  });
+
   // merged after filter
-  const mergedItems = [...new Set([...filterByCategories, ...filterByTags])];
+  const mergedItems = [
+    ...new Set([...intersection, ...filterByCategories, ...filterByTags]),
+  ];
 
   // filter by slug
   const filterBySlug = mergedItems.filter(
     (product) => product.slug !== currentItem.slug,
   );
+
+  // 如果超过3项，就截取前3项
+  if (filterBySlug.length > 3) {
+    return filterBySlug.slice(0, 3);
+  }
 
   return filterBySlug;
 };

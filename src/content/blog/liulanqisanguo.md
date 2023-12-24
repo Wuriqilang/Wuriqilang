@@ -2,8 +2,8 @@
 title: "浏览器内核的三国风云"
 descripiton: 天下大势,分久必合,合久必分 —— 《三国演义》
 date: 2020-07-01 09:02:04
-tags: [值得一读]
-categories: ["前端拾遗"]
+tags: [浏览器]
+categories: [值得一读]
 image: https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/posts/liulanqisanguo.PNG
 ---
 

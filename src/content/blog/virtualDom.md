@@ -2,7 +2,7 @@
 title: "它为什么这么快？—— Vue Virtual DOM详解"
 description: 面试京东和阿里的时候，面试官都问到了虚拟 Dom 与页面渲染的相关问题，鄙人支支吾吾，颠三倒四的回答了一个大概，引以为耻。
 date: 2020-07-01 15:15:18
-tags: [vue, 值得一读]
+tags: [vue]
 categories: [前端拾遗]
 image: https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/posts/virtualDom.jpg
 ---

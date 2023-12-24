@@ -2,7 +2,8 @@
 title: "我做过哪些项目？"
 description: 本文章下次更新时间 下次更新时
 date: 2020-05-10 23:33:14
-tags: [值得一读]
+tags: [项目经验]
+categories: [个人介绍]
 image: https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/posts/xiangmu.png
 ---
 

@@ -3,6 +3,8 @@ title: "CSS知识点"
 date: 2020-05-21 10:55:48
 description: CSS 作为构建前端页面的三驾马车,随着现代前端技术的飞速发展,已经称为描述页面样式不可或缺的部分. 本文将从前端面试题目出发,总结 CSS 必须掌握的知识点.
 image: "https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-12/ck8pn5.png"
+categories: [前端拾遗]
+tags: [CSS]
 ---
 
 CSS 作为构建前端页面的三驾马车,随着现代前端技术的飞速发展,已经称为描述页面样式不可或缺的部分. 本文将从前端面试题目出发,总结 CSS 必须掌握的知识点.

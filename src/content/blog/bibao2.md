@@ -5,6 +5,7 @@ description: 闭包作为前段封装函数，私有化变量的常用手段，�
 image: "https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-12/dmlaIz.png"
 author: "乌日其浪"
 categories: [前端拾遗]
+tags: [JavaScript, 闭包]
 ---
 
 闭包作为前段封装函数，私有化变量的常用手段，几乎是出现在所有面试问题当中。虽然说闭包已经在我们的程序中无处不在，但作为一个日常面向用户写业务代码的程序员，我们总是对闭包一知半解，模棱两可，希望可以通过这篇文章详解关于闭包的一切。

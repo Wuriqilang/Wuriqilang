@@ -98,9 +98,9 @@ const { title, description, author, categories, image, date, tags } = post.data;
     </div>
 
     <!-- Related posts -->
-    <div class="section pb-0">
+    {similarPosts.length>0 && <div class="section pb-0 row justify-center">
       <h2 class="h3 mb-12 text-center">Related Posts</h2>
-      <div class="row justify-center">
+      <div class="row justify-center lg:col-10">
         {
           similarPosts.map((post) => (
             <div class="lg:col-4">
@@ -109,6 +109,6 @@ const { title, description, author, categories, image, date, tags } = post.data;
           ))
         }
       </div>
-    </div>
+    </div>}
   </div>
 </section>

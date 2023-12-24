@@ -2,7 +2,7 @@
 title: "开篇词:数据与算法之美"
 description: 发动机之于汽车,九阳真经之于张无忌,数据结构之于编程
 date: 2020-05-26 09:52:27
-tags: []
+tags: [算法]
 categories: [算法]
 image: https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/posts/suanfazhimei.jpg
 ---

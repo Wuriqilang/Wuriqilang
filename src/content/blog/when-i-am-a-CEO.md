@@ -3,6 +3,7 @@ title: "【如果我是CEO】从0开始建立一套开发体系 -- 技术架构�
 description: 万一呢?
 date: 2020-10-11 09:23:39
 tags: [架构师, 值得一读]
+categories: [CEO系列]
 image: https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/posts/when-i-am-a-CEO.jpg
 ---
 

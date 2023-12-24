@@ -2,8 +2,8 @@
 title: "HTML相关知识点"
 description: "本文将从前端面试题目出发,总结 HTML 必须掌握的知识点."
 date: 2020-05-23 21:06:33
-tags: [值得一读]
 categories: ["前端拾遗"]
+tags: [HTML]
 image: https://xrtech.oss-cn-shanghai.aliyuncs.com/uPic/2023-06/posts/htmlpoint.jpg
 ---
 
