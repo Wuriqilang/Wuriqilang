@@ -1,6 +1,6 @@
 {
   "site": {
-    "title": "Wuriqilang's Blog | MageTower",
+    "title": "Wuriqilang's MageTower | 乌日其浪的法师塔",
     "base_url": "https://wuriqilang.com",
     "base_path": "/",
     "trailing_slash": false,
@@ -16,7 +16,7 @@
     "sticky_header": true,
     "theme_switcher": true,
     "default_theme": "system",
-    "pagination": 6,
+    "pagination": 15,
     "summary_length": 80,
     "blog_folder": "blog"
   },
@@ -30,7 +30,7 @@
     "link": "https://github.com/wuriqilang"
   },
   "metadata": {
-    "meta_author": "wuriqilang",
+    "meta_author": "乌日其浪",
     "meta_image": "/images/og-image.png",
     "meta_description": "乌日其浪的法师塔,在这里研究失传已久的程序魔法"
   }

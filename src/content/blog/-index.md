@@ -1,5 +1,3 @@
 ---
-title: "Blog Posts"
-meta_title: ""
-description: "this is meta description"
+title: "研究笔记 | 乌日其浪的法师塔"
 ---

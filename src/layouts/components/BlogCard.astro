@@ -17,21 +17,22 @@ const { title, image, date, author, categories,description } = data.data;
   {
     image && (
       <Image
-        class="mb-6 w-full rounded"
+        class="mb-4 w-full rounded"
         src={image}
         alt={title}
-        width={445}
-        height={230}
+        // width={445}
+        // height={230}
+        style="height: 12vh; width: 100%; object-fit: cover;"
         format="webp"
       />
     )
   }
-  <h4 class="mb-3">
-    <a href={`/${blog_folder}/${data.slug}`}>
+  <h4 class="mb-3 text-xl">
+    <a class="line-clamp-1 hover:line-clamp-2" href={`/${blog_folder}/${data.slug}`}>
       {title}
     </a>
   </h4>
-  <ul class="mb-4">
+  <ul class="mb-4 text-sm">
     <li class="mr-4 inline-block">
       <a href={`/authors/${slugify(author)}`}>
         <FaRegUserCircle className={"mr-2 -mt-1 inline-block"} />
@@ -51,7 +52,7 @@ const { title, image, date, author, categories,description } = data.data;
     </li>
     {date && <li class="inline-block">{dateFormat(date)}</li>}
   </ul>
-  <p class="mb-6">{description}</p>
+  <p class="mb-6 text-sm  line-clamp-2">{description}</p>
   <a
     class="btn btn-outline-primary btn-sm"
     href={`/${blog_folder}/${data.slug}`}
